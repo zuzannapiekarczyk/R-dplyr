@@ -1,0 +1,163 @@
+---
+title: "Pakiet dplyr"
+output: dplyr_notebook
+---
+
+```{r}
+# instalacja potrzebnych pakietów
+install.packages(dplyr)
+install.packages("PogromcyDanych")
+```
+
+
+```{r}
+# użycie potrzebnych bibliotek
+library(dplyr)
+library("PogromcyDanych")
+```
+
+
+```{r}
+# przypisanie auta2012
+auta2012 <- tbl_df(auta2012)
+```
+
+
+```{r}
+# obeznanie jak wygląda zbiór
+str(auta2012) 
+head(auta2012)
+dim(auta2012)
+```
+
+
+
+Zadania realizowane na tabeli auta2012 z użyciem pakietu dplyr:
+
+
+1. "Wyciągnij" auta marki Volvo i ceną brutto > 100000pln i posortuj je (sortowanie Volvo po cenie brutto oraz km)  
+
+```{r}
+auta2012 %>%
+  filter(Marka == "Volvo" & Brutto.netto == "brutto" & Cena.w.PLN > 100000) %>%
+  arrange(Cena, Przebieg.w.km)
+```
+
+2. Dokonaj agregacji w danych, wyliczając średnią cenę aut, odchylenie standardowe ceny, medianę przebiegu (wykorzystaj funkcję summarise)
+```{r}
+auta2012 %>%
+  summarise(sredniaCenaAut = mean(Cena.w.PLN),
+            medianaPrzebiegu = median(Przebieg.w.km),
+            odchylenieCeny = sd(Cena.w.PLN))
+```
+
+3. Dokonaj agregacji aut marki Volksvagen wyprodukowanych w 2007r wyliczając średnią cenę tych aut, odchylenie ceny, medianę przebiegu w zależności od rodzaju paliwa zużywanego przez auta, zlicz ile jest samochodów w poszczególnych grupach (wykorzystaj funckję grupowania group_by(), podsumowania oraz funkcję n())  
+```{r}
+auta2012 %>%
+  group_by(Rodzaj.paliwa) %>%
+  filter(Marka == "Volkswagen" & Rok.produkcji == 2007) %>%
+  summarise(sredniaCenaAut = mean(Cena.w.PLN),
+            medianaPrzebiegu = median(Przebieg.w.km),
+            odchylenieCeny = sd(Cena.w.PLN),
+            liczba = n())
+```
+
+4. Dokonaj agregacji jak powyżej, ale w zależności od rodzaju paliwa i modelu auta
+```{r}
+auta2012 %>%
+  group_by(Rodzaj.paliwa, Model) %>%
+  filter(Marka == "Volkswagen" & Rok.produkcji == 2007) %>%
+  summarise(sredniaCenaAut = mean(Cena.w.PLN),
+            medianaPrzebiegu = median(Przebieg.w.km),
+            odchylenieCeny = sd(Cena.w.PLN),
+            liczba = n(),
+            ,.groups = 'drop')
+```
+
+5. Która Marka występuje najczęściej w zbiorze danych auta2012?
+```{r}
+auta2012 %>%
+  group_by(Marka) %>%
+  summarise(Liczba = n()) %>%
+  arrange(desc(Liczba))
+```
+
+6. Spośród aut marki Toyota, który model występuje najczęściej.
+```{r}
+auta2012 %>%
+  group_by(Model) %>%
+  filter(Marka == "Toyota") %>%
+  summarise(Liczba = n()) %>%
+  arrange(desc(Liczba))
+```
+
+7. Sprawdź ile jest aut z silnikiem diesla wyprodukowanych w 2007 roku?
+```{r}
+auta2012 %>%
+  filter(Rodzaj.paliwa == "olej napedowy (diesel)" & Rok.produkcji == 2007) %>%
+  summarise(diesel = n())
+```
+
+8. Jakiego koloru auta mają najmniejszy medianowy przebieg?
+```{r}
+auta2012 %>%
+  group_by(Kolor) %>%
+  summarise(medPrzeb = median(Przebieg.w.km, na.rm = T)) %>%
+  arrange(medPrzeb)
+```
+
+9. Gdyby ograniczyć się tylko do aut wyprodukowanych w 2007, to która Marka występuje najczęściej w zbiorze danych auta2012?  
+```{r}
+auta2012 %>%
+  group_by(Marka) %>%
+  filter(Rok.produkcji == 2007) %>%
+  summarise(liczb = n()) %>%
+  arrange(desc(liczb))
+```
+
+10. Spośród aut marki Toyota, który model najbardziej stracił na cenie pomiędzy rokiem produkcji 2007 a 2008. 
+```{r}
+auta2012 %>%
+  group_by(Model) %>%
+  filter(Marka == "Toyota") %>%
+  summarise(Price7 = mean(Cena.w.PLN[Rok.produkcji==2007], na.rm = T),
+            Price8 = mean(Cena.w.PLN[Rok.produkcji==2008], na.rm = T),
+            Dif = Price8 - Price7) %>%
+  arrange(desc(Dif))
+```
+
+11. Spośród aut z silnikiem diesla wyprodukowanych w 2007 roku która marka jest najtańsza?
+```{r}
+auta2012 %>%
+  group_by(Marka) %>%
+  filter(Rok.produkcji == 2007 & Rodzaj.paliwa == "olej napedowy (diesel)") %>%
+  summarise(srednia = mean(Cena.w.PLN)) %>%
+  arrange(srednia)
+```
+
+12. W jakiej marce klimatyzacja jest najczęściej obecna?
+```{r}
+auta2012 %>%
+  group_by(Marka) %>%
+  filter(grepl("klimatyzacja",Wyposazenie.dodatkowe)) %>%
+  summarise(liczba = sum(grepl("klimatyzacja",Wyposazenie.dodatkowe))) %>%
+  arrange(desc(liczba))
+```
+
+13. Spośród aut marki Toyota wyprodukowanych w 2007 roku, który model jest średnio najdroższy?
+```{r}
+auta2012 %>%
+  group_by(Marka, Model) %>%
+  filter(Rok.produkcji == 2007 & Marka == "Toyota") %>%
+  summarise(srednia = mean(Cena.w.PLN),
+            .groups = 'drop') %>%
+  arrange(desc(srednia))
+```
+
+14. Zmodyfikuj zmienną Przebieg.w.km dzieląc ją przez średni przebieg danej marki
+
+```{r}
+auta2012 %>%
+  group_by(Marka) %>%
+  mutate(Przebieg.w.km = Przebieg.w.km / mean(Przebieg.w.km, na.rm = TRUE))
+```
